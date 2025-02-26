@@ -1,10 +1,10 @@
 'use strict';
 
-// 📌 Rimuovere il popup promozionale se presente
+// 📌 Rimuove il popup pubblicitario (se esiste)
 const promoPopup = document.getElementsByClassName('promo')[0];
 if (promoPopup) promoPopup.style.display = 'none';
 
-// 📌 Selezione del canvas e inizializzazione WebGL
+// 📌 Inizializza WebGL sul canvas
 const canvas = document.getElementsByTagName('canvas')[0];
 const { gl, ext } = getWebGLContext(canvas);
 
@@ -12,7 +12,7 @@ if (!gl) {
     alert('WebGL non supportato nel browser.');
 }
 
-// 📌 Configurazione della simulazione (Personalizzata)
+// 📌 Configurazione base
 let config = {
     SIM_RESOLUTION: 128,
     DYE_RESOLUTION: 1024,
@@ -36,7 +36,7 @@ let config = {
     SUNRAYS_WEIGHT: 1.0,
 }
 
-// 📌 Aggiunta della funzione "updateKeywords" per evitare errori
+// 📌 Funzione per aggiornare i parametri della simulazione
 function updateKeywords() {
     let displayKeywords = [];
     if (config.SHADING) displayKeywords.push("SHADING");
@@ -44,7 +44,24 @@ function updateKeywords() {
     if (config.SUNRAYS) displayKeywords.push("SUNRAYS");
 }
 
-// 📌 Inizializzazione della simulazione
+// 📌 Inizializzazione dei framebuffer
+function initFramebuffers() {
+    console.log("Inizializzazione framebuffer...");
+
+    let simRes = getResolution(config.SIM_RESOLUTION);
+    let dyeRes = getResolution(config.DYE_RESOLUTION);
+
+    const texType = ext.halfFloatTexType;
+    const rgba = ext.formatRGBA;
+    const filtering = ext.supportLinearFiltering ? gl.LINEAR : gl.NEAREST;
+
+    gl.disable(gl.BLEND);
+
+    dye = createDoubleFBO(dyeRes.width, dyeRes.height, rgba.internalFormat, rgba.format, texType, filtering);
+    velocity = createDoubleFBO(simRes.width, simRes.height, rgba.internalFormat, rgba.format, texType, filtering);
+}
+
+// 📌 Inizializza la simulazione
 updateKeywords();
 initFramebuffers();
 multipleSplats(parseInt(Math.random() * 20) + 5);
@@ -52,7 +69,7 @@ multipleSplats(parseInt(Math.random() * 20) + 5);
 let lastUpdateTime = Date.now();
 update();
 
-// 📌 Funzione per aggiornare la simulazione a ogni frame
+// 📌 Loop di aggiornamento
 function update() {
     const dt = calcDeltaTime();
     if (resizeCanvas()) initFramebuffers();
@@ -63,7 +80,7 @@ function update() {
     requestAnimationFrame(update);
 }
 
-// 📌 Adattare il canvas alla dimensione della finestra
+// 📌 Adatta il canvas alla finestra
 function resizeCanvas() {
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -75,7 +92,7 @@ function resizeCanvas() {
     return false;
 }
 
-// 📌 Aggiorna il tempo per la simulazione
+// 📌 Calcola il delta time
 function calcDeltaTime() {
     let now = Date.now();
     let dt = (now - lastUpdateTime) / 1000;
@@ -84,7 +101,7 @@ function calcDeltaTime() {
     return dt;
 }
 
-// 📌 Funzione per inizializzare WebGL
+// 📌 Funzione per ottenere il WebGL Context
 function getWebGLContext(canvas) {
     const params = { alpha: true, depth: false, stencil: false, antialias: false, preserveDrawingBuffer: false };
 
@@ -104,4 +121,18 @@ function getWebGLContext(canvas) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     return { gl, ext: { supportLinearFiltering } };
+}
+
+// 📌 Funzione per ottenere la risoluzione
+function getResolution(resolution) {
+    let aspectRatio = gl.drawingBufferWidth / gl.drawingBufferHeight;
+    if (aspectRatio < 1) aspectRatio = 1.0 / aspectRatio;
+
+    let min = Math.round(resolution);
+    let max = Math.round(resolution * aspectRatio);
+
+    if (gl.drawingBufferWidth > gl.drawingBufferHeight)
+        return { width: max, height: min };
+    else
+        return { width: min, height: max };
 }
