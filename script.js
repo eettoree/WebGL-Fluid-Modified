@@ -1,18 +1,23 @@
 'use strict';
 
-// Rimuovere il pannello di controllo GUI
-function startGUI () {
-    return; // Disabilita completamente il pannello GUI
+// Disabilitare la GUI rimuovendo la funzione che la inizializza
+function startGUI() {
+    console.log("GUI disabilitata"); // Debug per verificare che la funzione sia stata disattivata
 }
 
-// Mobile promo section - Disabilitata
+// Rimuovere la gestione del popup promozionale
 const promoPopup = document.getElementsByClassName('promo')[0];
 if (promoPopup) promoPopup.style.display = 'none';
 
-// Simulation section
+// Selezione del canvas e inizializzazione
 const canvas = document.getElementsByTagName('canvas')[0];
-resizeCanvas();
+const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
 
+if (!gl) {
+    alert('WebGL non supportato nel browser.');
+}
+
+// Configurazione della simulazione
 let config = {
     SIM_RESOLUTION: 128,
     DYE_RESOLUTION: 1024,
@@ -41,7 +46,11 @@ let config = {
     SUNRAYS_WEIGHT: 1.0,
 }
 
-const { gl, ext } = getWebGLContext(canvas);
+// Inizializza WebGL e verifica supporto
+const { ext } = getWebGLContext(canvas);
+if (!ext) {
+    alert('Il tuo browser non supporta le estensioni necessarie per WebGL.');
+}
 
 if (isMobile()) {
     config.DYE_RESOLUTION = 512;
@@ -53,6 +62,7 @@ if (!ext.supportLinearFiltering) {
     config.SUNRAYS = false;
 }
 
+// Inizializzazione della simulazione
 updateKeywords();
 initFramebuffers();
 multipleSplats(parseInt(Math.random() * 20) + 5);
@@ -61,7 +71,7 @@ let lastUpdateTime = Date.now();
 let colorUpdateTimer = 0.0;
 update();
 
-function update () {
+function update() {
     const dt = calcDeltaTime();
     if (resizeCanvas())
         initFramebuffers();
@@ -71,4 +81,30 @@ function update () {
         step(dt);
     render(null);
     requestAnimationFrame(update);
+}
+
+// Funzione per adattare il canvas alla dimensione della finestra
+function resizeCanvas() {
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        return true;
+    }
+    return false;
+}
+
+// Controlla se l'utente usa un dispositivo mobile
+function isMobile() {
+    return /Mobi|Android/i.test(navigator.userAgent);
+}
+
+// Aggiorna il tempo per la simulazione
+function calcDeltaTime() {
+    let now = Date.now();
+    let dt = (now - lastUpdateTime) / 1000;
+    dt = Math.min(dt, 0.016666);
+    lastUpdateTime = now;
+    return dt;
 }
