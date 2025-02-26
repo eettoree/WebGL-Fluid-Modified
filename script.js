@@ -9,7 +9,7 @@ function startGUI() {
 const promoPopup = document.getElementsByClassName('promo')[0];
 if (promoPopup) promoPopup.style.display = 'none';
 
-// Selezione del canvas e inizializzazione
+// Selezione del canvas e inizializzazione WebGL
 const canvas = document.getElementsByTagName('canvas')[0];
 const { gl, ext } = getWebGLContext(canvas);
 
@@ -46,15 +46,12 @@ let config = {
     SUNRAYS_WEIGHT: 1.0,
 }
 
-// Inizializza WebGL e verifica supporto
-if (isMobile()) {
-    config.DYE_RESOLUTION = 512;
-}
-if (!ext.supportLinearFiltering) {
-    config.DYE_RESOLUTION = 512;
-    config.SHADING = false;
-    config.BLOOM = false;
-    config.SUNRAYS = false;
+// 📌 Funzione per aggiornare i parametri della simulazione
+function updateKeywords() {
+    let displayKeywords = [];
+    if (config.SHADING) displayKeywords.push("SHADING");
+    if (config.BLOOM) displayKeywords.push("BLOOM");
+    if (config.SUNRAYS) displayKeywords.push("SUNRAYS");
 }
 
 // Inizializzazione della simulazione
@@ -78,7 +75,7 @@ function update() {
     requestAnimationFrame(update);
 }
 
-// Funzione per adattare il canvas alla dimensione della finestra
+// 📌 Funzione per adattare il canvas alla dimensione della finestra
 function resizeCanvas() {
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -90,12 +87,12 @@ function resizeCanvas() {
     return false;
 }
 
-// Controlla se l'utente usa un dispositivo mobile
+// 📌 Controlla se l'utente usa un dispositivo mobile
 function isMobile() {
     return /Mobi|Android/i.test(navigator.userAgent);
 }
 
-// Aggiorna il tempo per la simulazione
+// 📌 Aggiorna il tempo per la simulazione
 function calcDeltaTime() {
     let now = Date.now();
     let dt = (now - lastUpdateTime) / 1000;
@@ -104,7 +101,7 @@ function calcDeltaTime() {
     return dt;
 }
 
-// 📌 **Aggiunta della funzione getWebGLContext**
+// 📌 Funzione per inizializzare WebGL e verificare compatibilità
 function getWebGLContext(canvas) {
     const params = { alpha: true, depth: false, stencil: false, antialias: false, preserveDrawingBuffer: false };
 
